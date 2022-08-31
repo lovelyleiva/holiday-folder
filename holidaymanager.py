@@ -1,10 +1,9 @@
 from datetime import datetime, date
 import json
-from select import select
 from bs4 import BeautifulSoup
 import requests
 from dataclasses import dataclass
-from config import *
+from config import * 
 
 
 def getHTML(url):
@@ -22,7 +21,7 @@ class Holiday:
       
     def __init__(self, name, date):
         self._name = name
-        self._date = datetime.date    
+        self._date = date    
     
     def __str__ (self):
         return self._name    # Holiday output when printed.
@@ -39,210 +38,232 @@ class Holiday:
 # The HolidayList class acts as a wrapper and container
 # For the list of holidays
 # Each method has pseudo-code instructions
-innerHolidays = []
+
 @dataclass
 class HolidayList:
     def __init__(self):
         self.innerHolidays = []
 
-def addHoliday():
-    print("Add A Holiday")
-    print("====================")
-    isValid = False
-    while not isValid:
+    def addHoliday(self):
+        print("Add A Holiday")
+        print("====================")
+        isValid = False
         holiname = str(input("Holiday Name:    ")).title()
-        holidate = input("Holiday Date (yyyy-mm-dd):    ")
-        try:
-            valid_date = datetime.strptime(holidate, '%Y-%m-%d').date()
-            if (date(2020, 1, 1) <= valid_date <= date(2024, 12, 31)):
-                isValid == True
-        except:
-            print('Invalid date!')
-        if f'{holiname} ({holidate})' not in innerHolidays:     #don't let duplicates in
-            print(f'Success! {holiname} is added to {holidate}.')      # print to the user that you added a holiday
-            isValid= True
+        while not isValid:
+            holidate = input("Holiday Date (yyyy-mm-dd):    ")
+            try:
+                valid_date = datetime.strptime(holidate, '%Y-%m-%d').date()
+                if (date(2020, 1, 1) <= valid_date <= date(2024, 12, 31)):
+                    isValid = True
+                else:
+                    print('Date out of range!')
+            except:
+                print('Invalid date!')  
+                continue
+        if self.findHoliday(holiname, holidate) == True:    #don't let duplicates in
+            print(f'Sorry. {holiname} ({holidate}) already in list!')
         else:
-            print('This holiday is already added on this day!')
-        innerHolidays.append(f'{holiname} ({holidate})')   # Use innerHolidays.append to add holiday 
-    #print(innerHolidays)
+            aHoliday = Holiday(name = holiname, date = holidate)
+            self.innerHolidays.append(aHoliday)     # Use innerHolidays.append to add holiday 
+            print(f'Success! {holiname} ({holidate}) is added to the list.')      # print to the user that you added a holiday  
+        #print(self.innerHolidays)   #temporary
 
-
-def findHoliday(self, HolidayName, Date):
-    for i in self.innerHolidays:         # Find Holiday in innerHolidays
-        if i.name == HolidayName and i.date ==Date:
-            print(f'{HolidayName} is found in the list on {Date}.')     #Return holiday        
+    def findHoliday(self, holiname, holidate):
+        checkHoliday = Holiday(name = holiname, date = holidate)
+        if checkHoliday in self.innerHolidays:
+            return True     #Return holiday        
         else:
-            print('This holiday-date pair is not found in this list')
-        
-def removeHoliday():
-    print("Remove A Holiday")
-    print("====================")
-    isValid = False
-    while not isValid:
+            return False
+            
+    def removeHoliday(self):
+        print("Remove A Holiday")
+        print("====================")
+        isValid = False
         holiname = str(input("Holiday Name:    ")).title()
-        holidate = input("Holiday Date (yyyy-mm-dd):    ")
-        try:
-            datetime.strptime(date, '%Y-%m-%d')
-            isValid = True
-        except:
-            print("Enter date as yyyy-mm-dd")
-        if (f"{holiname} ({holidate})") in innerHolidays:     #don't let duplicates in
-            print(f'Success.\n{holiname} ({holidate}) is removed from holiday list.')      # print to the user that you added a holiday
+        while not isValid:
+            holidate = input("Holiday Date (yyyy-mm-dd):    ")
+            try:
+                valid_date = datetime.strptime(holidate, '%Y-%m-%d').date()
+                if (date(2020, 1, 1) <= valid_date <= date(2024, 12, 31)):
+                    isValid = True
+                else:
+                    print('Date out of range!')
+            except:
+                print('Invalid date!')  
+                continue
+        if self.findHoliday(holiname, holidate) == True:     #don't let duplicates in
+            print(f'Success. {holiname} ({holidate}) is removed from holiday list.')      # print to the user that you added a holiday
             isValid= True
+            checkHoliday = Holiday(name = holiname, date = holidate)
+            self.innerHolidays.pop(self.innerHolidays.index(checkHoliday))
         else:
-            print(f'{holiname} is not found on {holidate}.')
-    pos = innerHolidays.index((f"{holiname} ({holidate})"))
-    innerHolidays.pop(pos)    # remove the Holiday from innerHolidays
-    #print(innerHolidays)
+            print(f'{holiname} ({holidate}) not found.')
+        #print(self.innerHolidays)   #temporary
 
-def readJSON(): 
-    fileLocation = open('holidays.json')
-    holigiven = json.load(fileLocation)['holidays']
-    for k in holigiven:
-        innerHolidays.append(f"{k['name']} ({k['date']})")
-        holidayList = Holiday(k['name'], k['date'])
+        # remove the Holiday from innerHolidays
+    def readJSON(self): 
+        fileLocation = open('holidays.json')
+        holigiven = json.load(fileLocation)['holidays']
+        for k in holigiven:
+            aHoliday = Holiday(k['name'], k['date'])
+            self.innerHolidays.append(aHoliday)
 
-def saveToJSON():
-    jsonString = json.dumps(innerHolidays)
-    jsonFile = open("allholidays.json",'w')
-    jsonFile.write(jsonString)
-    jsonFile.close
-    print('Save successful. New file named allholidays.json is created.')
-    
-def scrapeHolidays(): 
-    for i in range(2020, 2025):     # Remember, 2 previous years, current year, and 2  years into the future. 
-        html = getHTML(f"https://www.timeanddate.com/holidays/us/{i}")      # Scrape Holidays from https://www.timeanddate.com/holidays/us/ 
-        soup = BeautifulSoup(html, 'html.parser')
+    def saveToJSON(self):
+        holidays = list(map(lambda h: {"date": h.date, "name": h.name}, self.innerHolidays))
+        jsonString = json.dumps({"holidays":holidays}, indent = 1)
+        jsonFile = open("allholidays.json",'w')
+        jsonFile.write(jsonString)
+        jsonFile.close
+        print('Save successful. New file named allholidays.json is created.')
         
-        tablebody = soup.find('table').find('tbody') 
-
-        for j in tablebody.find_all_next('tr'):
-            holidate = str(j.find('th', attrs = {'class':'nw'}))
-            holidate =(f'{holidate[15:-5]} {i}')
-            holiname = str(j.find('a'))
-            holiname = holiname[holiname.find('>')+1:-4]
-            if holidate != ' 2020' and holiname != '':     #getting blanks in same place in both date and name for some reason. so this takes care of that
-                holidate =datetime.strftime(datetime.strptime(holidate,'%b %d %Y'), '%Y-%m-%d') #strp separates, strf re-arranges
-                if f'{holiname} ({holidate})' not in innerHolidays:     #don't let duplicates in
-                    holidayList = Holiday(name = holiname,date = holidate)
-                    innerHolidays.append(f'{holiname} ({holidate})')
+    def scrapeHolidays(self): 
+        for i in range(2020, 2025):     # Remember, 2 previous years, current year, and 2  years into the future. 
+            html = getHTML(f"https://www.timeanddate.com/holidays/us/{i}")      # Scrape Holidays from https://www.timeanddate.com/holidays/us/ 
+            soup = BeautifulSoup(html, 'html.parser')
+            tablebody = soup.find('table').find('tbody') 
+            for j in tablebody.find_all_next('tr'):
+                holidate = str(j.find('th', attrs = {'class':'nw'}))
+                holidate =(f'{holidate[15:-5]} {i}')
+                holiname = str(j.find('a'))
+                holiname = holiname[holiname.find('>')+1:-4]
+                if holidate != ' 2020' and holiname != '':     #getting blanks in same place in both date and name for some reason. so this takes care of that
+                    holidate =datetime.strftime(datetime.strptime(holidate,'%b %d %Y'), '%Y-%m-%d') #strp separates, strf re-arranges
+                    aHoliday = Holiday(name = holiname, date = holidate)
+                    if aHoliday not in self.innerHolidays:     #don't let duplicates in
+                        self.innerHolidays.append(aHoliday)
+                    else:
+                        continue
                 else:
                     continue
+
+    def numHolidays(self):
+        return len(self.innerHolidays)   # Return the total number of holidays in innerHolidays
+
+    def filterHolidaysByWeek(self, selectYear,selectWeek):
+        print('This tab is under construction. Try again later.')
+        #holidaysinweek = list(filter(lambda h: h.date.isocalendar().weekday == selectWeek, self.innerHolidays))
+        holidaysinweek = list(filter(lambda x, y: x(datetime.strptime(self.innerHolidays, '%Y-%m-%d').isocalendar()[0]) == int(selectYear) and y(datetime.strptime(self.innerHolidays), '%Y-%m-%d').isocalendar()[1]) == int(selectWeek), self.innerHolidays)
+        print(holidaysinweek)
+        # Use a Lambda function to filter by week number and save this as holidays, use the filter on innerHolidays
+        # Week number is part of the the Datetime object
+        # Cast filter results as list
+        # return your holidays
+
+    #def displayHolidaysInWeek(holidayList):
+        # Use your filter_holidays_by_week to get list of holidays within a week as a parameter
+        # Output formated holidays in the week. 
+        # * Remember to use the holiday __str__ method.
+
+    def viewCurrentWeek(self):
+        print('View Holidays')
+        print("====================")
+        temp = []
+        selectYear = self.get_year("Which year?:    ")
+        selectWeek = self.get_week("Which week?:    ")
+        if selectWeek == datetime.today().isocalendar()[1] and selectYear == 2022:
+            selectWeather = input(f"Would you like to see the weather for current week?[y/n]")
+            if selectWeather == "y":  
+                url = f'http://api.openweathermap.org/data/2.5/forecast?lat=42.937084&lon=-75.6107&appid={APIKey}'
+                yearToDateWeather = getJson(url)
+                emptyWeather = []
+                newWeather = []
+                for d in yearToDateWeather["list"]:
+                    dw = d['weather'][0]
+                    dd = dw['description']
+                    dt = d['dt_txt']
+                    dt = datetime.strftime(datetime.strptime(dt,'%Y-%m-%d %H:%M:%S'), '%Y-%m-%d') #strp separates, strf re-arranges
+                    emptyWeather.append({dt :dd})
+                newWeather.append(emptyWeather[0])
+                newWeather.append(emptyWeather[7])
+                newWeather.append(emptyWeather[15])
+                newWeather.append(emptyWeather[23])
+                newWeather.append(emptyWeather[31])
+                newWeather.append(emptyWeather[39])
+                print(newWeather)
+                for i in self.innerHolidays:
+                    if selectYear in self.innerHolidays:
+                        temp.append(self.innerHolidays(i))
+                print(temp)
+                print('This tab is under construction. Try again later.')
             else:
-                continue
+                self.filterHolidaysByWeek(selectYear,selectWeek)
+        else:
+            self.filterHolidaysByWeek(selectYear,selectWeek)
 
-def numHolidays():
-    print(len(innerHolidays))     # Return the total number of holidays in innerHolidays
+            # Use the Datetime Module to look up current week and year
+            # Use your filter_holidays_by_week function to get the list of holidays 
+            # for the current week/year
+            # Use your displayHolidaysInWeek function to display the holidays in the week
+            # Ask user if they want to get the weather
+            # If yes, use your getWeather function and display results
 
-def filterHolidaysByWeek(selectYear,selectWeek):
-    print('This tab is under construction. Try again later.')
-    # holidaysinweek = list(filter(lambda x: datetime.strptime([innerHolidays[x]], '%Y-%m-%d').isocalendar()[0] == int(selectYear) and datetime.strptime([innerHolidays[x]], '%Y-%m-%d').isocalendar()[1] == int(selectWeek), innerHolidays))
-    # print(holidaysinweek)
-    # Use a Lambda function to filter by week number and save this as holidays, use the filter on innerHolidays
-    # Week number is part of the the Datetime object
-    # Cast filter results as list
-    # return your holidays
+    def display_main_menu(self):
+        print("\nMain Menu\n")
+        print("====================")
+        menu_options = {1: 'Add A Holiday', 2: 'Remove A Holiday', 3: 'Save Holiday List', 4: 'View Holidays', 5: 'Exit'}
+        for i in menu_options:
+            print(f'{i}. {menu_options[i]}')
 
-#def displayHolidaysInWeek(holidayList):
-    # Use your filter_holidays_by_week to get list of holidays within a week as a parameter
-    # Output formated holidays in the week. 
-    # * Remember to use the holiday __str__ method.
+    def get_menu_int(self, prompt):
+        my_int = 0
+        is_Valid = False
+        while not is_Valid:
+            try:
+                my_int = int(input(prompt))
+                if my_int <1 or my_int>5:
+                    raise ValueError
+                else:
+                    return my_int
+            except ValueError:
+                print('Invalid Integer, try again. Select menu option from 1 to 5.   ')
+        return my_int
 
-def viewCurrentWeek():
-    temp = []
-    print('View Holidays')
-    print("====================")
-    selectYear = get_any_int("Which year?:    ")
-    selectWeek = get_any_int("Which week?:    ")
-    if selectWeek == datetime.today().isocalendar()[1] and selectYear == 2022:
-        selectWeather = input(f"Would you like to see the weather for current week?[y/n]")
-        if selectWeather == "y":  
-            url = f'http://api.openweathermap.org/data/2.5/forecast?lat=42.937084&lon=-75.6107&appid={APIKey}'
-            yearToDateWeather = getJson(url)
-            emptyWeather = []
-            newWeather = []
-            for d in yearToDateWeather["list"]:
-                dw = d['weather'][0]
-                dd = dw['description']
-                dt = d['dt_txt']
-                dt = datetime.strftime(datetime.strptime(dt,'%Y-%m-%d %H:%M:%S'), '%Y-%m-%d') #strp separates, strf re-arranges
-                emptyWeather.append(f'{dt} {dd}')
-            newWeather.append(emptyWeather[0])
-            newWeather.append(emptyWeather[7])
-            newWeather.append(emptyWeather[15])
-            newWeather.append(emptyWeather[23])
-            newWeather.append(emptyWeather[31])
-            newWeather.append(emptyWeather[39])
-            print(newWeather)
-            for i in innerHolidays:
-                if selectYear in innerHolidays:
-                    temp.append(innerHolidays(i))
-            print(temp)
-            print('This tab is under construction. Try again later.')
-######TODO: need tp print the holidays that are in this week!!!!
-    else:
-       filterHolidaysByWeek(selectYear,selectWeek)
-######TODO: Everything. Need to get weeknum and pront holidays from there using lambra
+    def get_year(self, prompt):
+        my_int = 0
+        is_Valid = False
+        while not is_Valid:
+            try:
+                my_int = int(input(prompt))
+                if my_int <2020 or my_int>2024:
+                    raise ValueError
+                else:
+                    return my_int
+            except ValueError:
+                print('Invalid Integer, try again. Select year between 2020 and 2024.   ')
+        return my_int
 
-        # Use the Datetime Module to look up current week and year
-        # Use your filter_holidays_by_week function to get the list of holidays 
-        # for the current week/year
-        # Use your displayHolidaysInWeek function to display the holidays in the week
-        # Ask user if they want to get the weather
-        # If yes, use your getWeather function and display results
-
-
-def display_main_menu():
-    print("\nMain Menu\n")
-    print("====================")
-    menu_options = {1: 'Add A Holiday', 2: 'Remove A Holiday', 3: 'Save Holiday List', 4: 'View Holidays', 5: 'Exit'}
-    for i in menu_options:
-        print(f'{i}. {menu_options[i]}')
-
-def get_menu_int(prompt):
-    my_int = 0
-    is_Valid = False
-    while not is_Valid:
-        try:
-            my_int = int(input(prompt))
-            if my_int <1 or my_int>5:
-                raise ValueError
-            else:
-                return my_int
-        except ValueError:
-            print('Invalid Integer, try again. Select menu option from 1 to 5.   ')
-    return my_int
-
-def get_any_int(prompt):
-    my_int = 0
-    is_valid = False
-    while not is_valid:
-        try:
-            my_int = int(input(prompt))
-            is_valid = True
-        except:
-            print('Invalid Integer, try again')
-    return my_int
+    def get_week(self, prompt):
+        my_int = 0
+        is_Valid = False
+        while not is_Valid:
+            try:
+                my_int = int(input(prompt))
+                if my_int <1 or my_int>52:
+                    raise ValueError
+                else:
+                    return my_int
+            except ValueError:
+                print('Invalid Integer, try again. Select week number between 1 and 52.   ')
+        return my_int
 
 def main():
-    holidays = HolidayList
-    scrapeHolidays()
-    readJSON()
-    numHolidays
-    print(f'Welcome to the Holiday Manager!\nThere are {len(innerHolidays)} holidays already added to the list.')
+    holidays = HolidayList()
+    holidays.scrapeHolidays()
+    holidays.readJSON()
+    print(f'Welcome to the Holiday Manager!\nThere are {holidays.numHolidays()} holidays already added to the list.')
 
     exit_choice = 'y'
     while exit_choice != 'n':
-        display_main_menu()
-        menu_choice = get_menu_int('Select menu option from 1 to 5.     ')
+        holidays.display_main_menu()
+        menu_choice = holidays.get_menu_int('Select menu option from 1 to 5.     ')
         if menu_choice == 1:
-            addHoliday()
+            holidays.addHoliday()
         elif menu_choice ==2:
-            removeHoliday()
+            holidays.removeHoliday()
         elif menu_choice ==3:
-            saveToJSON()
+            holidays.saveToJSON()
         elif menu_choice ==4:
-            viewCurrentWeek()
+            holidays.viewCurrentWeek()
         elif menu_choice ==5:
             print('Exit')
             print("====================")
