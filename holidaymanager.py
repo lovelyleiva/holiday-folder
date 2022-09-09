@@ -24,7 +24,7 @@ class Holiday:
         self._date = date    
     
     def __str__ (self):
-        return self._name    # Holiday output when printed.
+        return f'{self._name} ({self._date.strftime("%Y-%m-%d")}'    # Holiday output when printed.
 
     @property
     def name(self):
@@ -105,11 +105,11 @@ class HolidayList:
         fileLocation = open('holidays.json')
         holigiven = json.load(fileLocation)['holidays']
         for k in holigiven:
-            aHoliday = Holiday(k['name'], k['date'])
+            aHoliday = Holiday(k['name'], datetime.strptime(k['date'], '%Y-%m-%d'))
             self.innerHolidays.append(aHoliday)
 
     def saveToJSON(self):
-        holidays = list(map(lambda h: {"date": h.date, "name": h.name}, self.innerHolidays))
+        holidays = list(map(lambda h: {"date": h.date.strftime('%Y-%m-%d'), "name": h.name}, self.innerHolidays))
         jsonString = json.dumps({"holidays":holidays}, indent = 1)
         jsonFile = open("allholidays.json",'w')
         jsonFile.write(jsonString)
@@ -127,7 +127,8 @@ class HolidayList:
                 holiname = str(j.find('a'))
                 holiname = holiname[holiname.find('>')+1:-4]
                 if holidate != ' 2020' and holiname != '':     #getting blanks in same place in both date and name for some reason. so this takes care of that
-                    holidate =datetime.strftime(datetime.strptime(holidate,'%b %d %Y'), '%Y-%m-%d') #strp separates, strf re-arranges
+                    holidate=datetime.strptime(holidate,'%b %d %Y') #strp separates, strf re-arranges
+                    print(type(holidate))
                     aHoliday = Holiday(name = holiname, date = holidate)
                     if aHoliday not in self.innerHolidays:     #don't let duplicates in
                         self.innerHolidays.append(aHoliday)
@@ -142,8 +143,12 @@ class HolidayList:
     def filterHolidaysByWeek(self, selectYear,selectWeek):
         print('This tab is under construction. Try again later.')
         #holidaysinweek = list(filter(lambda h: h.date.isocalendar().weekday == selectWeek, self.innerHolidays))
-        holidaysinweek = list(filter(lambda x, y: x(datetime.strptime(self.innerHolidays, '%Y-%m-%d').isocalendar()[0]) == int(selectYear) and y(datetime.strptime(self.innerHolidays), '%Y-%m-%d').isocalendar()[1]) == int(selectWeek), self.innerHolidays)
-        print(holidaysinweek)
+        holidaysinweek = list(filter(lambda aHoliday: aHoliday.date.isocalendar()[0] == int(selectYear) and aHoliday.date.isocalendar()[1] == int(selectWeek), self.innerHolidays))
+        for i in holidaysinweek:
+            print(i)
+        
+        #print([type(i.date) for i in self.innerHolidays])
+        
         # Use a Lambda function to filter by week number and save this as holidays, use the filter on innerHolidays
         # Week number is part of the the Datetime object
         # Cast filter results as list
@@ -154,13 +159,14 @@ class HolidayList:
         # Output formated holidays in the week. 
         # * Remember to use the holiday __str__ method.
 
+
     def viewCurrentWeek(self):
         print('View Holidays')
         print("====================")
         temp = []
         selectYear = self.get_year("Which year?:    ")
         selectWeek = self.get_week("Which week?:    ")
-        if selectWeek == datetime.today().isocalendar()[1] and selectYear == 2022:
+        if selectWeek == datetime.today().isocalendar()[1] and selectYear == datetime.today().isocalendar()[0]:
             selectWeather = input(f"Would you like to see the weather for current week?[y/n]")
             if selectWeather == "y":  
                 url = f'http://api.openweathermap.org/data/2.5/forecast?lat=42.937084&lon=-75.6107&appid={APIKey}'
@@ -180,6 +186,7 @@ class HolidayList:
                 newWeather.append(emptyWeather[31])
                 newWeather.append(emptyWeather[39])
                 print(newWeather)
+                self.filterHolidaysByWeek(selectYear,selectWeek)
                 for i in self.innerHolidays:
                     if selectYear in self.innerHolidays:
                         temp.append(self.innerHolidays(i))
